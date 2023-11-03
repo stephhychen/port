@@ -1,1 +1,7 @@
 node_modules
+.DS_Store
+dist/.DS_Store
+dist/framework/.DS_Store
+src/.DS_Store
+src/framework/processing/.DS_Store
+src/framework/processing/py/.DS_Store
