@@ -8,14 +8,14 @@ import zipfile
 def process(sessionId):
     yield donate(f"{sessionId}-tracking", '[{ "message": "user entered script" }]')
 
-    platforms = ["Twitter"]
+    platforms = ["Twitter", "Facebook", "Instagram", "Youtube"]
 
     subflows = len(platforms)
     steps = 2
     step_percentage = (100/subflows)/steps
 
     # progress in %
-    progress = 0 
+    progress = 0
 
     for index, platform in enumerate(platforms):
         meta_data = []
@@ -26,7 +26,7 @@ def process(sessionId):
         data = None
         while True:
             meta_data.append(("debug", f"{platform}: prompt file"))
-            promptFile = prompt_file(platform, "application/zip, application/json, text/plain")
+            promptFile = prompt_file(platform, "application/zip, text/plain")
             fileResult = yield render_donation_page(platform, promptFile, progress)
             if fileResult.__type__ == 'PayloadString':
                 meta_data.append(("debug", f"{platform}: extracting file"))
