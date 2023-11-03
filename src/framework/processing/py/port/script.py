@@ -112,7 +112,7 @@ def doSomethingWithTheFile(platform, filename):
 
 def extract_zip_contents(filename):
     names = []
-    files_wanted = ["data/tweets.js", "data/account.js"]
+    files_wanted = ["data/tweets.js", "data/like.js"]
     try:
         file = zipfile.ZipFile(filename)
         data = []
