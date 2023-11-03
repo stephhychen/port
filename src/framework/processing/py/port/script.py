@@ -3,12 +3,13 @@ from port.api.commands import (CommandSystemDonate, CommandUIRender)
 
 import pandas as pd
 import zipfile
+import json
 
 
 def process(sessionId):
     yield donate(f"{sessionId}-tracking", '[{ "message": "user entered script" }]')
 
-    platforms = ["Twitter", "Facebook", "Instagram", "Youtube"]
+    platforms = ["Twitter/X"]
 
     subflows = len(platforms)
     steps = 2
@@ -26,10 +27,11 @@ def process(sessionId):
         data = None
         while True:
             meta_data.append(("debug", f"{platform}: prompt file"))
-            promptFile = prompt_file(platform, "application/zip, text/plain")
+            promptFile = prompt_file(platform, "application/zip, text/plain, application/json")
             fileResult = yield render_donation_page(platform, promptFile, progress)
             if fileResult.__type__ == 'PayloadString':
                 meta_data.append(("debug", f"{platform}: extracting file"))
+                
                 extractionResult = doSomethingWithTheFile(platform, fileResult.value)
                 if extractionResult != 'invalid':
                     meta_data.append(("debug", f"{platform}: extraction successful, go to consent form"))
@@ -44,19 +46,21 @@ def process(sessionId):
                     else:
                         meta_data.append(("debug", f"{platform}: retry prompt file"))
                         break
+                
             else:
                 meta_data.append(("debug", f"{platform}: skip to next step"))
                 break
 
         # STEP 2: ask for consent
         progress += step_percentage
-        if data is not None:
+        if data is not None and "zip" in fileResult.value:
             meta_data.append(("debug", f"{platform}: prompt consent"))
             prompt = prompt_consent(platform, data, meta_data)
             consent_result = yield render_donation_page(platform, prompt, progress)
             if consent_result.__type__ == "PayloadJSON":
                 meta_data.append(("debug", f"{platform}: donate consent data"))
                 yield donate(f"{sessionId}-{platform}", consent_result.value)
+                
 
     yield render_end_page()
 
@@ -108,13 +112,15 @@ def doSomethingWithTheFile(platform, filename):
 
 def extract_zip_contents(filename):
     names = []
+    files_wanted = ["data/like.js", "data/tweets.js", "data/account.js"]
     try:
         file = zipfile.ZipFile(filename)
         data = []
         for name in file.namelist():
-            names.append(name)
-            info = file.getinfo(name)
-            data.append((name, info.compress_size, info.file_size))
+            if name in files_wanted:
+                names.append(name)
+                info = file.getinfo(name)
+                data.append((name, info.compress_size, info.file_size)) 
         return data
     except zipfile.error:
         return "invalid"
